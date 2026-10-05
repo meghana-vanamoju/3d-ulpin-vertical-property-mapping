@@ -112,20 +112,10 @@ require_editor: Callable = require_role(UserRole.EDITOR)
 require_admin: Callable = require_role(UserRole.ADMIN)
 
 
-def require_ownership_write_authorization() -> None:
-    """Fail closed until Feature 2 provides a real ownership-write permission."""
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail={
-            "error": {
-                "code": "OWNERSHIP_AUTHORIZATION_UNAVAILABLE",
-                "message": "Ownership writes require the Feature 2 authorization policy",
-            }
-        },
-    )
-
-
-OwnershipWriteAuthorization = Annotated[
-    None,
-    Depends(require_ownership_write_authorization),
-]
+#: Ownership mutations are gated on the same role tiers as the rest of the
+#: cadastral API rather than a bespoke gate. Registering an owner, granting or
+#: transferring an interest, and revoking one are ``editor`` actions: they
+#: mutate cadastral data but are routine registry work. Deleting an owner is
+#: ``admin`` because it can destroy history that a dispute may depend on.
+require_ownership_editor: Callable = require_role(UserRole.EDITOR)
+require_ownership_admin: Callable = require_role(UserRole.ADMIN)

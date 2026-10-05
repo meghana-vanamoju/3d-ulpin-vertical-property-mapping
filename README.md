@@ -340,10 +340,11 @@ specification is authored by no standards body, is not endorsed by any governmen
 programme, and implements no official ULPIN standard. Every ULPIN in the
 documentation and tests is an invented example value.
 
-**Ownership writes fail closed.** Until the Feature 2 authorisation policy lands,
-ownership mutation endpoints return `501 OWNERSHIP_AUTHORIZATION_UNAVAILABLE` rather
-than trusting any authenticated session. A valid login is deliberately not treated as
-write permission. This is intentional: the alternative is an authorisation bypass.
+**Ownership writes are role-gated.** Registering an owner, editing a profile, granting
+an interest, transferring and revoking all require the `editor` role or above; deleting
+an owner requires `admin`, because deletion can destroy history a dispute depends on. A
+valid login alone is never treated as write permission — a `reader` receives
+`403 INSUFFICIENT_ROLE`.
 
 **Ownership transfers are implemented; revocation is present but conservative.**
 Consult [docs/ownership-specification.md](docs/ownership-specification.md) for the

@@ -9,7 +9,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from app.core.dependencies import (
     CurrentUser,
     DatabaseSession,
-    OwnershipWriteAuthorization,
+    require_admin,
+    require_editor,
+    require_reader,
 )
 from app.schemas.error import ErrorResponse
 from app.schemas.ownership import (
@@ -37,7 +39,7 @@ from app.services.ownership import (
     update_owner,
 )
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(require_reader)])
 
 
 def _raise_api_error(error: OwnershipError) -> None:
@@ -70,12 +72,12 @@ def _raise_api_error(error: OwnershipError) -> None:
         },
         422: {"model": ErrorResponse, "description": "Validation error"},
     },
+    dependencies=[Depends(require_editor)],
 )
 async def create_owner_route(
     body: OwnerCreate,
     db: DatabaseSession,
     current_user: CurrentUser,
-    write_access: OwnershipWriteAuthorization,
 ):
     try:
         return create_owner(db, body)
@@ -129,13 +131,13 @@ async def get_owner_route(owner_id: UUID, db: DatabaseSession, current_user: Cur
         },
         422: {"model": ErrorResponse, "description": "Validation error"},
     },
+    dependencies=[Depends(require_editor)],
 )
 async def update_owner_route(
     owner_id: UUID,
     body: OwnerUpdate,
     db: DatabaseSession,
     current_user: CurrentUser,
-    write_access: OwnershipWriteAuthorization,
 ):
     try:
         return update_owner(db, owner_id, body)
@@ -158,12 +160,12 @@ async def update_owner_route(
             "description": "Feature 2 write authorization is unavailable",
         },
     },
+    dependencies=[Depends(require_admin)],
 )
 async def delete_owner_route(
     owner_id: UUID,
     db: DatabaseSession,
     current_user: CurrentUser,
-    write_access: OwnershipWriteAuthorization,
 ):
     try:
         delete_owner(db, owner_id)
@@ -192,12 +194,12 @@ async def delete_owner_route(
         },
         422: {"model": ErrorResponse, "description": "Validation error"},
     },
+    dependencies=[Depends(require_editor)],
 )
 async def grant_interest_route(
     body: OwnershipGrant,
     db: DatabaseSession,
     current_user: CurrentUser,
-    write_access: OwnershipWriteAuthorization,
 ):
     try:
         return grant_interest(db, body)
@@ -224,12 +226,12 @@ async def grant_interest_route(
         },
         422: {"model": ErrorResponse, "description": "Validation error"},
     },
+    dependencies=[Depends(require_editor)],
 )
 async def transfer_ownership_route(
     body: OwnershipTransfer,
     db: DatabaseSession,
     current_user: CurrentUser,
-    write_access: OwnershipWriteAuthorization,
 ):
     try:
         return transfer_ownership(db, body)
@@ -253,13 +255,13 @@ async def transfer_ownership_route(
         },
         422: {"model": ErrorResponse, "description": "Validation error"},
     },
+    dependencies=[Depends(require_editor)],
 )
 async def revoke_interest_route(
     interest_id: UUID,
     body: OwnershipRevocation,
     db: DatabaseSession,
     current_user: CurrentUser,
-    write_access: OwnershipWriteAuthorization,
 ):
     try:
         return revoke_interest(db, interest_id, body)

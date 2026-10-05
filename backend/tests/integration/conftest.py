@@ -29,17 +29,14 @@ from __future__ import annotations
 import itertools
 import os
 from collections.abc import Generator
+from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import Engine, create_engine, text
 from sqlalchemy.orm import Session, sessionmaker
 
-from app.core.dependencies import (
-    get_current_user,
-    get_db,
-    require_ownership_write_authorization,
-)
+from app.core.dependencies import get_current_user, get_db
 from app.main import create_app
 from app.models.floor import FloorType
 from app.models.user import User, UserRole
@@ -199,17 +196,27 @@ def client(app_instance, db_session: Session) -> Generator[TestClient, None, Non
 
 @pytest.fixture
 def ownership_client(client: TestClient) -> Generator[TestClient, None, None]:
-    """Authenticate ownership API tests and explicitly grant test write access."""
-    client.app.dependency_overrides[get_current_user] = lambda: {
-        "id": "integration-test-user",
-        "is_active": True,
-    }
-    client.app.dependency_overrides[require_ownership_write_authorization] = lambda: None
+    """Authenticate ownership API tests as an admin.
+
+    A real ``User`` with the ``admin`` role is injected rather than bypassing
+    the role dependency, so these tests exercise the same authorization path
+    production uses. Passing ``admin`` also satisfies the stricter tier that
+    ``delete_owner`` requires. Authorisation at the boundary -- reader being
+    refused, editor being refused deletion -- is covered in
+    ``tests/test_ownership_contracts.py``.
+    """
+    client.app.dependency_overrides[get_current_user] = lambda: User(
+        id=uuid4(),
+        email="ownership-integration@example.com",
+        password_hash="not-used",
+        full_name="Ownership Integration",
+        is_active=True,
+        role=UserRole.ADMIN,
+    )
     try:
         yield client
     finally:
         client.app.dependency_overrides.pop(get_current_user, None)
-        client.app.dependency_overrides.pop(require_ownership_write_authorization, None)
 
 
 @pytest.fixture(autouse=True)

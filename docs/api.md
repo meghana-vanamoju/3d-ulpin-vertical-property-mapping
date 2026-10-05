@@ -78,19 +78,19 @@ savepoint behavior, and report semantics.
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| POST | `/api/v1/ownership/owners` | Yes + Feature 2 write permission | Register an owner |
+| POST | `/api/v1/ownership/owners` | `editor` role | Register an owner |
 | GET | `/api/v1/ownership/owners` | Yes | Search and paginate owners |
 | GET | `/api/v1/ownership/owners/{owner_id}` | Yes | Retrieve an owner profile |
-| PATCH | `/api/v1/ownership/owners/{owner_id}` | Yes + Feature 2 write permission | Update an owner profile |
-| DELETE | `/api/v1/ownership/owners/{owner_id}` | Yes + Feature 2 write permission | Delete an owner only when no ownership history exists |
-| POST | `/api/v1/ownership/interests` | Yes + Feature 2 write permission | Grant a parcel or unit interest |
-| POST | `/api/v1/ownership/transfers` | Yes + Feature 2 write permission | Atomically replace a subject's complete allocation |
-| POST | `/api/v1/ownership/interests/{interest_id}/revocations` | Yes + Feature 2 write permission | Close an interest while retaining history |
+| PATCH | `/api/v1/ownership/owners/{owner_id}` | `editor` role | Update an owner profile |
+| DELETE | `/api/v1/ownership/owners/{owner_id}` | `editor` role | Delete an owner only when no ownership history exists |
+| POST | `/api/v1/ownership/interests` | `editor` role | Grant a parcel or unit interest |
+| POST | `/api/v1/ownership/transfers` | `editor` role | Atomically replace a subject's complete allocation |
+| POST | `/api/v1/ownership/interests/{interest_id}/revocations` | `editor` role | Close an interest while retaining history |
 | GET | `/api/v1/ownership/parcels/{parcel_id}/interests` | Yes | List parcel interests |
 | GET | `/api/v1/ownership/units/{unit_id}/interests` | Yes | List unit interests |
 | GET | `/api/v1/ownership/owners/{owner_id}/interests` | Yes | List an owner's interests |
 
-Ownership writes currently return `501 OWNERSHIP_AUTHORIZATION_UNAVAILABLE` until Feature 2 supplies a real authorization policy. A valid login alone is not treated as mutation permission. See [Ownership Specification](ownership-specification.md) for the data and temporal semantics.
+Ownership writes require the `editor` role or above; deleting an owner requires `admin`, because it can destroy history a dispute depends on. A valid login alone is never treated as write permission -- a `reader` receives `403 INSUFFICIENT_ROLE`. See [Ownership Specification](ownership-specification.md) for the data and temporal semantics.
 
 ## Error Format
 
