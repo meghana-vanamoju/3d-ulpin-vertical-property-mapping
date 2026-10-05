@@ -31,10 +31,23 @@ from tests.integration import factories
 pytestmark = pytest.mark.integration
 
 
+_POSTGRES_CAST = re.compile(r"::[A-Za-z_][A-Za-z0-9_]*(?:\s+[A-Za-z_][A-Za-z0-9_]*)*(?:\s*\[\])?")
+
+
 def _normalized_sql(value: Any) -> str | None:
     if value is None:
         return None
-    return re.sub(r"\s+", " ", str(value).replace('"', "").strip()).lower()
+    sql = re.sub(r"\s+", " ", str(value).replace('"', "").strip()).lower()
+    # PostgreSQL reflects a normalized rewrite rather than the SQL that was
+    # written: it parenthesises each operand and casts integer literals to the
+    # column type, so `x_max - x_min <= 10000` comes back as
+    # `((x_max - x_min) <= (10000)::numeric)`. Stripping the casts and
+    # redundant grouping lets the two spellings of the same constraint compare
+    # equal. Real drift -- a missing, renamed, or differently-bounded constraint
+    # -- still compares unequal.
+    sql = _POSTGRES_CAST.sub("", sql)
+    sql = sql.replace("(", " ").replace(")", " ")
+    return re.sub(r"\s+", " ", sql).strip()
 
 
 def _constraint_name_matches(metadata_name: str | None, database_name: str | None) -> bool:

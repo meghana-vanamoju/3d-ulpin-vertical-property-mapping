@@ -69,8 +69,8 @@ def test_alembic_configuration_discovers_current_migration_head():
     # A second head means two migration chains diverged, which makes
     # `alembic upgrade head` fail. Keep this assertion: merging two branches
     # that each added a numbered migration is exactly how that happens.
-    assert scripts.get_heads() == ["0007_merge_rbac_and_ownership"]
-    assert scripts.get_current_head() == "0007_merge_rbac_and_ownership"
+    assert scripts.get_heads() == ["0008_bound_local_geometry_frame"]
+    assert scripts.get_current_head() == "0008_bound_local_geometry_frame"
     assert {
         "parcels",
         "ulpins",

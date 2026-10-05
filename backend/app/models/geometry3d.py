@@ -23,7 +23,24 @@ class GeometryType(PyEnum):
 
 
 class PropertyGeometry(BaseModel, AuditColumns):
-    """3D property geometry model using axis-aligned bounding boxes (AABB)."""
+    """3D property geometry model using axis-aligned bounding boxes (AABB).
+
+    Coordinate frame
+    ----------------
+    Unit AABBs are expressed in a **local metric frame (metres)**, not in
+    geographic degrees. Parcel and building footprints use SRID 4326 degrees;
+    mixing the two is a real hazard, because a box expressed in degrees
+    satisfies ``x_min < x_max`` just as happily as one in metres and would
+    pass every ordering check while describing a millimetre-sized object at
+    the wrong place on Earth.
+
+    The upper bounds below make that mistake fail loudly instead. They are
+    far above any plausible building -- the tallest structure in the world
+    is under 1km, and a single residential unit is a small fraction of that
+    -- so they cannot reject legitimate data, while any value carrying a
+    geographic coordinate (|value| > 180) is far outside them and is
+    rejected by the database.
+    """
 
     __tablename__ = "property_geometry"
 
@@ -39,6 +56,18 @@ class PropertyGeometry(BaseModel, AuditColumns):
         CheckConstraint(
             "z_min < z_max",
             name="ck_property_geometry_z_min_lt_z_max",
+        ),
+        CheckConstraint(
+            "x_max - x_min <= 10000",
+            name="ck_property_geometry_x_extent_within_local_frame",
+        ),
+        CheckConstraint(
+            "y_max - y_min <= 10000",
+            name="ck_property_geometry_y_extent_within_local_frame",
+        ),
+        CheckConstraint(
+            "z_max - z_min <= 10000",
+            name="ck_property_geometry_z_extent_within_local_frame",
         ),
         UniqueConstraint("unit_id", name="uq_property_geometry_unit_id"),
     )

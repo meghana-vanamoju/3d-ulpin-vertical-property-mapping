@@ -73,6 +73,7 @@ class ValidationIssue(BaseModel):
         "INVALID_DIMENSIONS",
         "ZERO_VOLUME",
         "DIMENSION_BELOW_THRESHOLD",
+        "DIMENSION_EXCEEDS_LOCAL_FRAME",
     ]
     message: str
     field: str

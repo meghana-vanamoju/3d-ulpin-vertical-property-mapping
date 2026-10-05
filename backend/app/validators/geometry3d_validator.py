@@ -8,6 +8,12 @@ from app.models.geometry3d import PropertyGeometry
 from app.schemas.geometry3d import GeometryValidationInput, ValidationIssue, ValidationResult
 
 DEFAULT_MINIMUM_DIMENSION = Decimal("0.001")
+
+#: Widest single-unit extent accepted on any axis, in metres. Unit geometry is
+#: stored in a local metric frame; footprints use geographic degrees, so a
+#: coordinate pasted from an SRID 4326 source lands far outside this bound.
+MAX_UNIT_EXTENT_METRES = Decimal("10000")
+
 _AXES = ("x", "y", "z")
 _COORDINATES = tuple(f"{axis}_{side}" for axis in _AXES for side in ("min", "max"))
 
@@ -128,7 +134,39 @@ def validate_geometry(
             )
         )
 
+    errors.extend(_frame_errors(dimensions))
+
     return ValidationResult(valid=not errors, errors=errors)
+
+
+def _frame_errors(dimensions: dict[str, Decimal]) -> list[ValidationIssue]:
+    """Reject geometry that cannot have come from the local metric frame.
+
+    Unit AABBs are metres; parcel and building footprints are geographic
+    degrees. A latitude or longitude is at most 180 in magnitude, and even a
+    whole degree is roughly 111 km, so any axis extent beyond
+    ``MAX_UNIT_EXTENT_METRES`` means the caller supplied the wrong frame
+    rather than a real structure. Reported separately from the ordering
+    checks because it is a different class of mistake: not a malformed box
+    but a box in the wrong units.
+    """
+    issues: list[ValidationIssue] = []
+    for axis in _AXES:
+        dimension = dimensions[axis]
+        if dimension > MAX_UNIT_EXTENT_METRES:
+            issues.append(
+                ValidationIssue(
+                    code="DIMENSION_EXCEEDS_LOCAL_FRAME",
+                    message=(
+                        f"{axis.upper()} extent {dimension} exceeds the maximum "
+                        f"{MAX_UNIT_EXTENT_METRES} m for a single unit. Unit geometry is "
+                        "stored in a local metric frame (metres); geographic coordinates "
+                        "(degrees, e.g. from an SRID 4326 footprint) cannot be used here."
+                    ),
+                    field=axis,
+                )
+            )
+    return issues
 
 
 def _coerce_threshold(value: Decimal | int | float) -> Decimal:

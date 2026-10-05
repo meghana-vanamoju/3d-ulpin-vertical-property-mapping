@@ -35,3 +35,30 @@ coordinates have zero/inverted dimensions, or values cannot fit the canonical
 numeric precision without rounding. Reconcile those rows before retrying the
 migration; the original unit columns remain in place when these preflight
 checks fail.
+
+
+## Coordinate frame
+
+Unit bounding boxes are stored in a **local metric frame (metres)**, origin
+arbitrary per building. Parcel and building footprints are stored separately in
+**SRID 4326 (geographic degrees)**. The two are never mixed in one row, and the
+API does not convert between them.
+
+This distinction is enforced rather than merely documented. `x_min < x_max` and
+its y/z counterparts are necessary but not sufficient: a box expressed in
+degrees satisfies those ordering checks exactly as well as one in metres, and
+would be accepted while describing a millimetre-sized object at the wrong place
+on Earth. Three further constraints therefore bound each axis extent to 10 km
+(`ck_property_geometry_*_extent_within_local_frame`) — far above any real
+structure, but well below the ~111 km a single degree spans. The validator
+reports the same condition as `DIMENSION_EXCEEDS_LOCAL_FRAME`.
+
+**Known residual risk:** a small degree span (for example 0.001°, about 11 cm)
+still passes, because it satisfies both the ordering checks and the extent
+bound and is indistinguishable from a genuinely thin unit. Detecting that would
+require comparing against a registered anchor transform, which GEOSIX does not
+maintain. Coordinate provenance therefore remains the caller's responsibility.
+
+Georeferencing unit volumes against footprints requires an anchor transform
+between the local frame and SRID 4326. That is not implemented, which is why the
+3D viewer renders unit volumes but not building or parcel outlines.

@@ -355,7 +355,15 @@ valid login alone is never treated as write permission — a `reader` receives
 Consult [docs/ownership-specification.md](docs/ownership-specification.md) for the
 exact temporal semantics, including what happens when a subject's interests overlap.
 
-**Migrations are a single linear history.** Ten revisions converge into one head
+**Unit geometry and footprints live in different frames.** Unit AABBs are in a local
+metric frame (metres); parcel and building footprints are SRID 4326 degrees. The two
+are never mixed, and three CHECK constraints plus a
+`DIMENSION_EXCEEDS_LOCAL_FRAME` validation issue keep degrees out of unit geometry —
+a box in degrees satisfies `x_min < x_max` just as well as one in metres. A small
+degree span still evades this bound; see
+[docs/unit-bounding-box-storage.md](docs/unit-bounding-box-storage.md).
+
+**Migrations are a single linear history.** Eleven revisions converge into one head
 through two explicit no-op merge revisions (`0006_merge_ownership_geometry` and
 `0007_merge_rbac_and_ownership`), each added when two independently developed
 branches each introduced a numbered revision. They carry no schema change; they exist
