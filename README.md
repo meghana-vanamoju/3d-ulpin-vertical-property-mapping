@@ -36,7 +36,8 @@ identity together with its position in that hierarchy.
 | **Topological validation** | Geometry, overlap, gap and elevation checks for a building or a single unit, with configurable tolerances. Runs against the real database. |
 | **Volumetric visualisation** | Browser-based 3D viewer (React Three Fiber) for unit geometry, with orbit controls and colour-coded validation state. |
 | **Ownership and governance** | Owners and effective-dated ownership interests over a parcel *or* a unit, with transfers and revocations that retain history rather than overwriting it. |
-| **Vertical codes (VDC)** | A single ASCII string encoding ULPIN, property domain, vertical level, unit identifier and a checksum, with independent parser, validator, generator and checksum verifier. |
+| **Vertical codes (VDC)** | A single ASCII string encoding parcel, property domain, vertical level, unit identifier and a checksum, with independent parser, validator, generator and checksum verifier. |
+| **ULPIN interoperability** | Validates India's 14-character national parcel identifier and derives a local key from it, so vertical codes can sit beneath a nationally recognised parcel. |
 | **GeoJSON import** | Bulk import of parcel boundaries and building footprints, with dry-run preview, per-feature outcomes, bounded request size, and per-feature savepoints so one bad feature cannot abort a batch. |
 | **Authentication and RBAC** | JWT access/refresh tokens, bcrypt password hashing, persisted login throttling, password reset by email, and ordered `reader` / `editor` / `admin` permission tiers. |
 
@@ -330,15 +331,19 @@ backup and restore procedure, and troubleshooting guidance are in
 | [geojson-import.md](docs/geojson-import.md) | Import formats, limits, savepoint behaviour |
 | [deployment.md](docs/deployment.md) | Deployment, backup/restore, troubleshooting |
 | [vdc-specification.md](docs/vdc-specification.md) | Vertical DNA Code grammar and algorithms |
+| [ulpin-interoperability.md](docs/ulpin-interoperability.md) | Relationship to India's national ULPIN, and its limits |
 
 ---
 
 ## Design notes and known limitations
 
-**VDC and ULPIN are project conventions, not government standards.** The VDC
-specification is authored by no standards body, is not endorsed by any government
-programme, and implements no official ULPIN standard. Every ULPIN in the
-documentation and tests is an invented example value.
+**GEOSIX extends ULPIN; it does not issue it.** India's national parcel identifier
+(ULPIN/Bhu-Aadhaar) is a 14-character code maintained by the Department of Land
+Resources under DILRMP. GEOSIX validates that structure and derives a local parcel
+key from it, so a vertical code can be anchored to a nationally recognised parcel.
+GEOSIX is not part of that programme, assigns no ULPIN, and never verifies a ULPIN
+against the national registry. The VDC itself is a project convention authored by
+no standards body. See [docs/ulpin-interoperability.md](docs/ulpin-interoperability.md).
 
 **Ownership writes are role-gated.** Registering an owner, editing a profile, granting
 an interest, transferring and revoking all require the `editor` role or above; deleting
